@@ -1,5 +1,5 @@
 import { generateAudio } from "./src/audio/utils/generateAudio";
-import { S3 } from "./src/audio/classes/Minio";
+import { S3 } from "./src/audio/classes/S3";
 
 const connectServices = async () => {
   S3.getInstance()?.connect()
@@ -22,4 +22,4 @@ const uploadAudio = async (word: string) => {
 }
 
 await connectServices();
-await uploadAudio("better");
+await uploadAudio("strength");
