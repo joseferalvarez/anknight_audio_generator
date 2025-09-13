@@ -1,9 +1,8 @@
 import * as Minio from "minio"
+import { Readable } from "stream";
 
-// TODO: Buscar la mejor manera de montar el Singleton
-// TODO: Montar la funcion para subir los audios
-export class SMinio {
-  static instance: SMinio | null = null;
+export class S3 {
+  static instance: S3 | null = null;
 
   private host: string;
   private port: number;
@@ -21,32 +20,68 @@ export class SMinio {
     this.client = null
   }
 
-  connect() {
+  private async bucketExist() {
+    if (!this.client) throw new Error(`The bucket ${this.bucket} doesn't exist`)
+    return await this.client.bucketExists(this.bucket);
+  }
+
+  public connect() {
     try {
       this.client = new Minio.Client({
         endPoint: this.host,
-        port: this.port,
         useSSL: true,
         accessKey: this.accessKey,
         secretKey: this.secretKey,
       })
 
-      console.log(`Minio service connected to ${this.host}:${this.port}`)
-
+      console.log(`S3 service connected to ${this.host}:${this.port}`)
     } catch (e) {
       throw new Error(`Unable to connect to minio host: ${e}`)
     }
   }
 
-  private bucketExist() {
-    return this.client?.bucketExists(this.bucket);
+  public async uploadAudio(text: string, audio: ReadableStream, accent: string) {
+    try {
+      if (!this.client) this.connect();
+
+      const bucketExist = await this.bucketExist();
+      if (!bucketExist) throw new Error(`The bucket selected does not exist: ${this.bucket}. Create it in your S3 provider before uploads.`);
+
+      const file = Readable.fromWeb(audio);
+
+      if (!this.client) throw new Error("The client could't be connected");
+
+      const path = `phonetics/${accent}/${text}.mp3`;
+      await this.client.putObject(this.bucket, path, file,);
+
+      console.log(`Audio uploaded to S3: ${text}`)
+
+      return path;
+    } catch (e) {
+      throw new Error(`Error uploading the audio of ${text} to S3 storage: ${e}`)
+    }
+  }
+
+  public async generatePresignedURL(path: string) {
+    try {
+      if (!this.client) this.connect();
+      if (!this.client) throw new Error("The client could't be connected");
+
+      const expiryDays = ((Number(process.env.MINIO_URL_EXPIRY_DAYS) > 7 ? 7 : Number(process.env.MINIO_URL_EXPIRY_DAYS)) || 7) * 60 * 60 * 24;
+
+      const presignedUrl = await this.client.presignedGetObject(this.bucket, path, expiryDays)
+
+      return presignedUrl;
+    } catch (e) {
+      throw new Error(`The presigned URL couldn't be generated: ${e}`);
+    }
   }
 
   public static getInstance() {
-    if (!SMinio.instance) {
-      this.instance = new SMinio();
+    if (!S3.instance) {
+      this.instance = new S3();
     }
 
-    return SMinio.instance
+    return S3.instance
   }
 }

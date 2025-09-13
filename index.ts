@@ -1,9 +1,25 @@
 import { generateAudio } from "./src/audio/utils/generateAudio";
-import { Readable } from "stream";
-import fs from "fs";
-import * as Minio from "minio";
-import { sMinio } from "./src/audio/classes/Minio";
+import { S3 } from "./src/audio/classes/Minio";
 
-const minio = new sMinio();
+const connectServices = async () => {
+  S3.getInstance()?.connect()
+}
 
-//const audio = await generateAudio("huddle");
+const uploadAudio = async (word: string) => {
+  try {
+    const s3 = S3.getInstance();
+
+    if (!s3) throw new Error(`The S3 service couldn't be connected`);
+
+    const audio = await generateAudio(word);
+    const path = await s3.uploadAudio(word, audio, "british");
+    const presignedURL = await s3.generatePresignedURL(path);
+
+    console.log(presignedURL);
+  } catch (e) {
+    console.log(e);
+  }
+}
+
+await connectServices();
+await uploadAudio("better");
