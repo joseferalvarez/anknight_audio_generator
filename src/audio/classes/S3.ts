@@ -1,5 +1,7 @@
+import { language } from "@elevenlabs/elevenlabs-js/api/resources/dubbing/resources/resource";
 import * as Minio from "minio"
 import { Readable } from "stream";
+import { randomUUID } from "crypto";
 
 export class S3 {
   static instance: S3 | null = null;
@@ -40,7 +42,7 @@ export class S3 {
     }
   }
 
-  public async uploadAudio(text: string, audio: ReadableStream, accent: string) {
+  public async uploadAudio(word: string, text: string, audio: ReadableStream, accent: { name: string, language: string }) {
     try {
       if (!this.client) this.connect();
 
@@ -51,12 +53,12 @@ export class S3 {
 
       if (!this.client) throw new Error("The client could't be connected");
 
-      const path = `phonetics/${accent}/${text}.mp3`;
-      await this.client.putObject(this.bucket, path, file,);
+      const path = `public/audio/phonetics/${accent.language}/${accent.name}/${word}/${randomUUID()}.mp3`;
+      await this.client.putObject(this.bucket, path, file);
 
       console.log(`Audio uploaded to S3: ${text}`)
 
-      return path;
+      return `https://${this.host}/${this.bucket}/${path}`;
     } catch (e) {
       throw new Error(`Error uploading the audio of ${text} to S3 storage: ${e}`)
     }
@@ -82,6 +84,6 @@ export class S3 {
       this.instance = new S3();
     }
 
-    return S3.instance
+    return S3.instance;
   }
 }

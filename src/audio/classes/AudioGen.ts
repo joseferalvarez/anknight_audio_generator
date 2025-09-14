@@ -2,7 +2,8 @@ import { ElevenLabsClient } from "@elevenlabs/elevenlabs-js"
 import { TextToSpeechConvertRequestOutputFormat } from "@elevenlabs/elevenlabs-js/api"
 
 export class AudioGen {
-  static instance: AudioGen | null = null
+  static instance: AudioGen | null = null;
+
   private client: ElevenLabsClient;
   private outputFormat: TextToSpeechConvertRequestOutputFormat;
   private modelId: string;
@@ -27,5 +28,13 @@ export class AudioGen {
     } catch (e) {
       throw new Error(`The audio could't be generated: ${e}`)
     }
+  }
+
+  public static getInstance() {
+    if (!AudioGen.instance) {
+      AudioGen.instance = new AudioGen()
+    }
+
+    return AudioGen.instance
   }
 }
