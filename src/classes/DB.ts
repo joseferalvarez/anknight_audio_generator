@@ -1,5 +1,5 @@
 import mongoose from "mongoose";
-import Accent from "../../schemas/Accent";
+import Accent from "../schemas/Accent";
 
 export class DB {
   static instance: DB | null = null;
@@ -9,7 +9,7 @@ export class DB {
     this.uri = process.env.MONGO_URI || "";
   }
 
-  public async connect() {
+  public connect = async () => {
     try {
       await mongoose.connect(this.uri);
       console.log(`Mongoose connected to ${this.uri}`);
@@ -18,7 +18,7 @@ export class DB {
     }
   }
 
-  public async initializeDB() {
+  public initializeDB = async () => {
     const accent = await Accent.findOne();
 
     if (!accent) {
@@ -35,7 +35,7 @@ export class DB {
     }
   }
 
-  public static getInstance() {
+  public static getInstance = () => {
     if (!DB.instance) {
       DB.instance = new DB();
     }

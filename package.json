@@ -3,7 +3,11 @@
   "module": "index.ts",
   "type": "module",
   "private": true,
+  "scripts": {
+    "start": "bun run src/index.ts"
+  },
   "devDependencies": {
+    "@types/amqplib": "^0.10.7",
     "@types/bun": "latest",
     "@types/minio": "^7.1.1"
   },
@@ -14,6 +18,9 @@
     "@elevenlabs/elevenlabs-js": "^2.15.0",
     "amqplib": "^0.10.9",
     "minio": "^8.0.5",
-    "mongoose": "^8.18.1"
+    "mongoose": "^8.18.1",
+    "pino": "^9.9.5",
+    "pino-pretty": "^13.1.1",
+    "zod": "^4.1.8"
   }
 }

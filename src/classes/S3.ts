@@ -27,7 +27,7 @@ export class S3 {
     return await this.client.bucketExists(this.bucket);
   }
 
-  public connect() {
+  public connect = () => {
     try {
       this.client = new Minio.Client({
         endPoint: this.host,
@@ -42,7 +42,7 @@ export class S3 {
     }
   }
 
-  public async uploadAudio(word: string, text: string, audio: ReadableStream, accent: { name: string, language: string }) {
+  public uploadAudio = async (word: string, text: string, audio: ReadableStream, accent: { name: string, language: string }) => {
     try {
       if (!this.client) this.connect();
 
@@ -64,7 +64,7 @@ export class S3 {
     }
   }
 
-  public async generatePresignedURL(path: string) {
+  public generatePresignedURL = async (path: string) => {
     try {
       if (!this.client) this.connect();
       if (!this.client) throw new Error("The client could't be connected");
@@ -79,7 +79,7 @@ export class S3 {
     }
   }
 
-  public static getInstance() {
+  public static getInstance = () => {
     if (!S3.instance) {
       this.instance = new S3();
     }
