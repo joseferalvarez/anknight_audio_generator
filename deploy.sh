@@ -6,8 +6,8 @@ fi
 
 VERSION=$(jq -r .version package.json)
 
-IMAGE_NAME_VERSION=ghcr.io/anknight-learning/anknight_audio_generator/anknight-audio-generator:$VERSION
-IMAGE_NAME_LATEST=ghcr.io/anknight-learning/anknight_audio_generator/anknight-audio-generator:latest
+IMAGE_NAME_VERSION=ghcr.io/anknight-learning/anknight-audio-generator:$VERSION
+IMAGE_NAME_LATEST=ghcr.io/anknight-learning/anknight-audio-generator:latest
 
 docker login --username $GHCR_USER --password $GHCR_PASS ghcr.io
 
