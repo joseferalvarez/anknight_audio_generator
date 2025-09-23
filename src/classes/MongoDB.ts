@@ -1,18 +1,19 @@
 import mongoose from "mongoose";
 import Accent from "../schemas/Accent";
+import type pino from "pino";
+import { Logger } from "./Logger";
 
-export class DB {
-  static instance: DB | null = null;
-  private uri: string
+export class MongoDB {
+  static instance: MongoDB | null = null;
+  private uri: string = process.env.MONGO_URI || "";
+  private logger: pino.Logger = Logger.getInstance();
 
-  constructor() {
-    this.uri = process.env.MONGO_URI || "";
-  }
+  constructor() { }
 
   public connect = async () => {
     try {
       await mongoose.connect(this.uri);
-      console.log(`Mongoose connected to ${this.uri}`);
+      this.logger.info(`Mongoose connected to ${this.uri}`);
     } catch (e) {
       throw new Error(`The database couldn't be connected`);
     }
@@ -22,7 +23,7 @@ export class DB {
     const accent = await Accent.findOne();
 
     if (!accent) {
-      console.log("No accents found, creating default accent")
+      this.logger.info("No accents found, creating default accent")
 
       const newAccent = await Accent.insertOne({
         name: process.env.DEFAULT_ACCENT_NAME,
@@ -31,15 +32,12 @@ export class DB {
         is_active: true
       });
 
-      console.log(`Default accent created: ${newAccent.name}`);
+      this.logger.info(`Default accent created: ${newAccent.name}`);
     }
   }
 
   public static getInstance = () => {
-    if (!DB.instance) {
-      DB.instance = new DB();
-    }
-
-    return DB.instance;
+    if (!MongoDB.instance) MongoDB.instance = new MongoDB();
+    return MongoDB.instance;
   }
 }

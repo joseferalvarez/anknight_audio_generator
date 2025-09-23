@@ -1,8 +1,11 @@
 import { ElevenLabsClient } from "@elevenlabs/elevenlabs-js"
 import { TextToSpeechConvertRequestOutputFormat } from "@elevenlabs/elevenlabs-js/api"
+import { Logger } from "./Logger";
+import type pino from "pino";
 
 export class AudioGenerator {
   static instance: AudioGenerator | null = null;
+  private logger: pino.Logger = Logger.getInstance();
 
   private client: ElevenLabsClient;
   private outputFormat: TextToSpeechConvertRequestOutputFormat;
@@ -22,19 +25,16 @@ export class AudioGenerator {
         outputFormat: this.outputFormat
       });
 
-      console.log(`Audio generated for the text ${text}`);
+      this.logger.info(`Audio generated for the text ${text}`);
 
       return audio;
     } catch (e) {
-      throw new Error(`The audio could't be generated: ${e}`)
+      throw new Error(`The audio could't be generated: ${e}`);
     }
   }
 
   public static getInstance = () => {
-    if (!AudioGenerator.instance) {
-      AudioGenerator.instance = new AudioGenerator()
-    }
-
-    return AudioGenerator.instance
+    if (!AudioGenerator.instance) AudioGenerator.instance = new AudioGenerator();
+    return AudioGenerator.instance;
   }
 }

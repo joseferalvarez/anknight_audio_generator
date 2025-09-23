@@ -1,0 +1,7 @@
+---
+services:
+  anknight-audio-generator:
+    build: .
+    restart: unless-stopped
+    env_file:
+      - .env

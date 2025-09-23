@@ -1,18 +1,10 @@
 import pino from "pino";
 
 export class Logger {
-  static instance: Logger | null = null;
+  static instance: pino.Logger | null = null;
 
-  public logger: any;
-
-  constructor() {
-    this.logger = pino()
-  }
-
-  public static getInstance = () => {
-    if (!Logger.instance) {
-      this.instance = new Logger();
-    }
+  static getInstance = () => {
+    if (!Logger.instance) Logger.instance = pino();
     return Logger.instance;
   }
 }

@@ -1,26 +1,21 @@
-import { language } from "@elevenlabs/elevenlabs-js/api/resources/dubbing/resources/resource";
 import * as Minio from "minio"
 import { Readable } from "stream";
 import { randomUUID } from "crypto";
+import type pino from "pino";
+import { Logger } from "./Logger";
 
-export class S3 {
-  static instance: S3 | null = null;
+export class StorageS3 {
+  static instance: StorageS3 | null = null;
+  private logger: pino.Logger = Logger.getInstance();
 
-  private host: string;
-  private port: number;
-  private accessKey: string;
-  private secretKey: string;
-  private bucket: string;
-  private client: typeof Minio.Client.prototype | null
+  private host: string = process.env.MINIO_URL || "";
+  private port: number = Number(process.env.MINIO_PORT) || 9000;
+  private accessKey: string = process.env.MINIO_ACCESS_KEY || "";
+  private secretKey: string = process.env.MINIO_SECRET_KEY || "";
+  private bucket: string = process.env.MINIO_BUCKET || "";
+  private client: typeof Minio.Client.prototype | null = null;
 
-  constructor() {
-    this.host = process.env.MINIO_URL || "";
-    this.port = Number(process.env.MINIO_PORT) || 9000;
-    this.accessKey = process.env.MINIO_ACCESS_KEY || "";
-    this.secretKey = process.env.MINIO_SECRET_KEY || "";
-    this.bucket = process.env.MINIO_BUCKET || "";
-    this.client = null
-  }
+  constructor() { }
 
   private async bucketExist() {
     if (!this.client) throw new Error(`The bucket ${this.bucket} doesn't exist`)
@@ -34,9 +29,9 @@ export class S3 {
         useSSL: true,
         accessKey: this.accessKey,
         secretKey: this.secretKey,
-      })
+      });
 
-      console.log(`S3 service connected to ${this.host}:${this.port}`)
+      this.logger.info(`S3 service connected to ${this.host}:${this.port}`)
     } catch (e) {
       throw new Error(`Unable to connect to minio host: ${e}`)
     }
@@ -64,26 +59,8 @@ export class S3 {
     }
   }
 
-  public generatePresignedURL = async (path: string) => {
-    try {
-      if (!this.client) this.connect();
-      if (!this.client) throw new Error("The client could't be connected");
-
-      const expiryDays = ((Number(process.env.MINIO_URL_EXPIRY_DAYS) > 7 ? 7 : Number(process.env.MINIO_URL_EXPIRY_DAYS)) || 7) * 60 * 60 * 24;
-
-      const presignedUrl = await this.client.presignedGetObject(this.bucket, path, expiryDays)
-
-      return presignedUrl;
-    } catch (e) {
-      throw new Error(`The presigned URL couldn't be generated: ${e}`);
-    }
-  }
-
   public static getInstance = () => {
-    if (!S3.instance) {
-      this.instance = new S3();
-    }
-
-    return S3.instance;
+    if (!StorageS3.instance) this.instance = new StorageS3();
+    return StorageS3.instance;
   }
 }

@@ -1,46 +1,53 @@
-import { S3 } from "./classes/S3";
-import { DB } from "./classes/DB";
+import { StorageS3 } from "./classes/StorageS3";
+import { MongoDB } from "./classes/MongoDB";
 import { AudioGenerator } from "./classes/AudioGenerator";
 import { generateAudio } from "./utils/generateAudio";
-import { Rabbit } from "./classes/Rabbit";
+import { RabbitMQ } from "./classes/RabbitMQ";
 import { IMessage } from "./interfaces/IMessage";
 import type { Message } from "amqplib";
+import { Logger } from "./classes/Logger";
+
+const logger = Logger.getInstance();
+if (!logger) console.error("The Logger service doesn't work");
 
 const connectServices = async () => {
   try {
     AudioGenerator.getInstance()
 
-    const s3 = S3.getInstance()
-    const db = DB.getInstance()
-    const rabbit = Rabbit.getInstance()
+    const storage = StorageS3.getInstance();
+    const amqp = RabbitMQ.getInstance();
+    const db = MongoDB.getInstance();
 
-    if (s3) await s3.connect();
-    if (rabbit) await rabbit.connect();
+    if (!storage) return logger.fatal("The MinioS3 storage couldn't be connected");
+    if (!amqp) return logger.fatal("The RabbitMQ service couldn't be connected");
+    if (!db) return logger.fatal("The MongoDB database couldn't be connected");
 
-    if (db) {
-      await db.connect();
-      await db.initializeDB();
-    }
+    storage.connect();
+    await amqp.connect();
+    await db.connect();
+    await db.initializeDB();
 
-    if (!rabbit) return;
-
-    rabbit.consumeQueue(async (message: Message) => {
+    amqp.consumeQueue(async (message: Message) => {
       const validMessage = IMessage.Validation.Message.safeParse(JSON.parse(message.content.toString()));
 
       if (!validMessage.success) {
-        console.log(`The message data is not valid: ${JSON.parse(validMessage.error?.message)[0].message}`);
+        logger.warn(`The message data is not valid: ${JSON.parse(validMessage.error?.message)[0].message}`);
         return;
       }
 
       const newMessage: IMessage.Types.Message = validMessage.data;
-      const newWord = await generateAudio(newMessage.word, newMessage.text, newMessage.field_name, newMessage.field_id);
 
-      console.log(newWord);
-    })
+      try {
+        const newWord = await generateAudio(newMessage.word, newMessage.text, newMessage.field_name, newMessage.field_id);
+        logger.info(`Audio generated for "${newWord?.word}": ${newMessage.text}`);
+      } catch (e) {
+        logger.warn(`Audio couldn't be generated for "${newMessage.word}": ${newMessage.text}`);
+      }
+    });
 
-    console.log("All the services were connected succesfully");
+    logger.info("All the services were connected succesfully");
   } catch (e) {
-    console.log("The services couldn't be connected succesfully");
+    logger.fatal("The services couldn't be connected succesfully");
     process.exit(1);
   }
 }
